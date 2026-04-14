@@ -38,7 +38,7 @@ def download_with_ytdlp(url: str, mode: str) -> tuple[str, str]:
     Returns: (saved_filename, message)
     """
     info = get_video_info(url)
-    title = sanitize_filename(info.get("title", "youtube_download"))
+    title = sanitize_filename(info.get("title", "salah"))
     task_id = uuid.uuid4().hex[:8]
     base_output = str(DOWNLOAD_DIR / f"{title}_{task_id}.%(ext)s")
 
