@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Downloader</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin: 14px 0 8px;
+      font-weight: bold;
+    }
+    input[type="url"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .option {
+      border: 1px solid #d9d9d9;
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      text-align: center;
+      background: #fafafa;
+    }
+    .option input {
+      display: none;
+    }
+    .option.active {
+      border-color: #111;
+      background: #eef4ff;
+      font-weight: bold;
+    }
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      background: #111;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .result, .error {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+    .result {
+      background: #e9f9ee;
+      color: #166534;
+    }
+    .error {
+      background: #fdecec;
+      color: #991b1b;
+    }
+    a.download-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #0a58ca;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>YouTube Downloader</h1>
+
+    <label for="url">YouTube URL</label>
+    <input id="url" type="url" placeholder="Paste YouTube link here" />
+
+    <label>Download options</label>
+    <div class="options">
+      <label class="option active">
+        <input type="radio" name="mode" value="mp3" checked />
+        MP3
+      </label>
+      <label class="option">
+        <input type="radio" name="mode" value="mp4" />
+        MP4
+      </label>
+      <label class="option">
+        <input type="radio" name="mode" value="subtitle" />
+        Subtitle
+      </label>
+      <label class="option">
+        <input type="radio" name="mode" value="thumbnail" />
+        Thumbnail
+      </label>
+    </div>
+
+    <button id="downloadBtn">Download</button>
+
+    <div id="feedback"></div>
+  </div>
+
+  <script>
+    const options = document.querySelectorAll(".option");
+    const feedback = document.getElementById("feedback");
+    const button = document.getElementById("downloadBtn");
+
+    options.forEach(option => {
+      option.addEventListener("click", () => {
+        options.forEach(o => o.classList.remove("active"));
+        option.classList.add("active");
+        option.querySelector("input").checked = true;
+      });
+    });
+
+    button.addEventListener("click", async () => {
+      const url = document.getElementById("url").value.trim();
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+
+      feedback.innerHTML = "";
+      if (!url) {
+        feedback.innerHTML = `<div class="error">Please enter a YouTube URL.</div>`;
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Processing...";
+
+      try {
+        const res = await fetch("/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, mode })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || "Download failed.");
+        }
+
+        feedback.innerHTML = `
+          <div class="result">
+            ${data.message}<br>
+            <a class="download-link" href="${data.download_url}">Download file</a>
+          </div>
+        `;
+      } catch (err) {
+        feedback.innerHTML = `<div class="error">${err.message}</div>`;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Download";
+      }
+    });
+  </script>
+</body>
+</html>
